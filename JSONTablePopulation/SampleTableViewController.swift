@@ -15,9 +15,9 @@ class SampleTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)
+        
         populateTableView()
-        
-        
         
         
         
@@ -34,42 +34,57 @@ class SampleTableViewController: UITableViewController {
         }
         
         let session = NSURLSession.sharedSession()
+//        
+//        let queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)
+//        
+//        dispatch_async(queue) {
         
-        let queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)
         
-        dispatch_async(queue) {
         
-            session.dataTaskWithURL(dataSourceURL){ (data: NSData?, response: NSURLResponse?, error: NSError?) in
+        dispatch_async( dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),{
             
+            session.dataTaskWithURL(dataSourceURL){ (data: NSData?, response: NSURLResponse?, error: NSError?) in
+                
                 guard let jsonResult = NSString(data: data!, encoding: NSUTF8StringEncoding) else {
                     fatalError("Error formatting data")
                 }
-            
-                let jsonSampleArray = try! NSJSONSerialization.JSONObjectWithData(data!, options: NSJSONReadingOptions.AllowFragments) as! [AnyObject]
-            
-                print(jsonSampleArray)
-            
-                for item in jsonSampleArray {
                 
+                let jsonSampleArray = try! NSJSONSerialization.JSONObjectWithData(data!, options: NSJSONReadingOptions.AllowFragments) as! [AnyObject]
+                
+                print(jsonSampleArray)
+                
+                for item in jsonSampleArray {
+                    
                     let sampleItem = SampleItem()
                     sampleItem.title = item.valueForKey("title") as! String
                     sampleItem.thumbnailUrl = item.valueForKey("thumbnailUrl") as! String
-                
+                    
                     self.sampleItems.append(sampleItem)
-                
+                    
+                    
                 }
-            
-            
-                dispatch_async(dispatch_get_main_queue(), {
                 
+                
+                
+                dispatch_async( dispatch_get_main_queue(), {
+                    // Add code here to update the UI/send notifications based on the
+                    // results of the background processing
                     self.tableView.reloadData()
-                
-                
+                    
                 })
+                
+                
             }.resume()
-        }
-        
+            
+
+
+
+            });
+
     }
+    
+    
+
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -100,14 +115,21 @@ class SampleTableViewController: UITableViewController {
             fatalError("Invalid URL")
         }
         
-        let imageData = NSData(contentsOfURL: imageURL)
+        let queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)
         
-        let image = UIImage(data: imageData!)
-        
-        cell.imageView?.image = image
-        
-        cell.textLabel?.text = sampleItem.title
+        dispatch_async(queue) { 
+            
+             let imageData = NSData(contentsOfURL: imageURL)
+             let image = UIImage(data: imageData!)
+            
+            dispatch_async(dispatch_get_main_queue(), { 
+                cell.imageView?.image = image
+                cell.textLabel?.text = sampleItem.title
 
+            })
+            
+        }
+        
         return cell
     }
  
